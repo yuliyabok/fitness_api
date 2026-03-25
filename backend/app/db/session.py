@@ -1,0 +1,27 @@
+﻿from collections.abc import Generator
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.core.config import settings
+
+# Engine is shared across requests.
+engine = create_engine(settings.database_url, future=True, pool_pre_ping=True)
+
+# Session factory for request-scoped DB sessions.
+SessionLocal = sessionmaker(
+    bind=engine,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False,
+    future=True,
+)
+
+
+def get_db() -> Generator[Session, None, None]:
+    """FastAPI dependency that provides a DB session per request."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

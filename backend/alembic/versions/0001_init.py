@@ -1,4 +1,6 @@
-﻿"""init schema
+﻿# Файл: миграция начальной структуры базы данных.
+
+"""init schema
 
 Revision ID: 0001_init
 Revises:

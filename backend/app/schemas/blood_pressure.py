@@ -1,3 +1,5 @@
+# Файл: Pydantic-схемы для артериального давления.
+
 import uuid
 from datetime import datetime
 

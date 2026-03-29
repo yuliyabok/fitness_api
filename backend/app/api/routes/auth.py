@@ -1,3 +1,5 @@
+# Файл: маршруты API для авторизации.
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session

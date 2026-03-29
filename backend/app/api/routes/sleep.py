@@ -1,3 +1,5 @@
+# Файл: маршруты API для сна.
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session

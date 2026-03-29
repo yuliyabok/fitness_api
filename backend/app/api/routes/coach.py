@@ -1,3 +1,5 @@
+# Файл: маршруты API для связей тренера со спортсменами.
+
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status

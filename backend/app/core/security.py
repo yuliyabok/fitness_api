@@ -1,3 +1,5 @@
+# Файл: утилиты для хэширования паролей и работы с JWT-токенами.
+
 from datetime import datetime, timedelta, timezone
 from typing import Any
 

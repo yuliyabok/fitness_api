@@ -1,3 +1,5 @@
+# Файл: Pydantic-схемы для связей тренера со спортсменами.
+
 import uuid
 from datetime import datetime
 

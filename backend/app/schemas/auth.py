@@ -1,3 +1,5 @@
+# Файл: Pydantic-схемы для авторизации.
+
 from pydantic import BaseModel, EmailStr, Field
 
 

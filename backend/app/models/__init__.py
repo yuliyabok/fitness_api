@@ -1,3 +1,5 @@
+# Файл: пакет ORM-моделей backend-приложения.
+
 from app.models.user import AppUser, AthleteProfile, CoachProfile
 from app.models.training import Training
 from app.models.blood_pressure import BloodPressureEntry

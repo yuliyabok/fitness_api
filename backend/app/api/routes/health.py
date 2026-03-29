@@ -1,3 +1,5 @@
+# Файл: маршруты API для проверки состояния сервиса.
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/health", tags=["health"])

@@ -1,3 +1,5 @@
+# Файл: Pydantic-схемы для калорий.
+
 import uuid
 from datetime import date
 

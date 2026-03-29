@@ -1,3 +1,5 @@
+# Файл: миграция объединения нескольких веток Alembic.
+
 """merge 0002 heads
 
 Revision ID: 0003_merge_heads

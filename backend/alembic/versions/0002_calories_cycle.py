@@ -1,3 +1,5 @@
+# Файл: миграция таблиц калорий и данных цикла.
+
 """add calories and cycle tables
 
 Revision ID: 0002_calories_cycle

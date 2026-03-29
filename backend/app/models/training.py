@@ -1,3 +1,5 @@
+# Файл: ORM-модель для хранения тренировок.
+
 import uuid
 from datetime import date, datetime, time
 

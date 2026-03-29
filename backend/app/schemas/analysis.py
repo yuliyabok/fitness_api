@@ -1,3 +1,5 @@
+# Файл: Pydantic-схемы для анализов.
+
 import uuid
 from datetime import date
 

@@ -1,3 +1,5 @@
+# Файл: миграция профилей и связей между тренером и спортсменом.
+
 """add full athlete profile fields and coach-athlete links
 
 Revision ID: 0005_profiles_and_coach_links

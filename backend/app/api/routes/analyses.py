@@ -1,3 +1,5 @@
+# Файл: маршруты API для анализов.
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session

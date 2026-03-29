@@ -1,3 +1,5 @@
+# Файл: Pydantic-схемы для сна.
+
 import uuid
 from datetime import datetime
 

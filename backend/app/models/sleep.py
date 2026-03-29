@@ -1,3 +1,5 @@
+# Файл: ORM-модель для хранения сна.
+
 import uuid
 from datetime import datetime
 

@@ -1,3 +1,5 @@
+# Файл: маршруты API для тренировок.
+
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status

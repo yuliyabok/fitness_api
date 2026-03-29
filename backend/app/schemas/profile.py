@@ -1,3 +1,5 @@
+# Файл: Pydantic-схемы для профиля пользователя.
+
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field

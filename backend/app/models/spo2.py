@@ -1,3 +1,5 @@
+# Файл: ORM-модель для хранения сатурации.
+
 import uuid
 from datetime import datetime
 

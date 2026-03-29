@@ -1,3 +1,5 @@
+# Файл: миграция таблиц сна и сатурации.
+
 """add sleep and spo2 tables
 
 Revision ID: 0004_sleep_spo2

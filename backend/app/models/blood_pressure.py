@@ -1,3 +1,5 @@
+# Файл: ORM-модель для хранения артериального давления.
+
 import uuid
 from datetime import datetime
 

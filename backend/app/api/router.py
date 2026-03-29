@@ -1,3 +1,5 @@
+# Файл: главный роутер, который собирает все маршруты backend API.
+
 from fastapi import APIRouter
 
 from app.api.routes import analyses, auth, blood_pressure, calories, coach, cycle, health, profile, sleep, spo2, trainings

@@ -1,4 +1,6 @@
-﻿from collections.abc import Generator
+﻿# Файл: создание движка и сессий SQLAlchemy для работы с базой данных.
+
+from collections.abc import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker

@@ -1,114 +1,260 @@
-# Backend API (FastAPI + PostgreSQL)
+# Fitness API Backend
 
-## 1. Setup
+FastAPI backend для фитнес-приложения.
 
-```powershell
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
+## Назначение
+
+Backend отвечает за:
+
+- регистрацию и вход пользователей
+- выпуск JWT токенов
+- хранение профилей спортсменов и тренеров
+- хранение тренировок
+- хранение анализов
+- хранение калорий
+- хранение артериального давления
+- хранение данных сна
+- хранение SpO2
+- хранение данных цикла
+- связь тренер -> спортсмен
+
+## Технологии
+
+- FastAPI
+- SQLAlchemy 2
+- Alembic
+- PostgreSQL
+- `python-jose` для JWT
+- `bcrypt` для хеширования паролей
+
+## Точка входа
+
+Файл: `app/main.py`
+
+Backend:
+
+1. создаёт `FastAPI` приложение
+2. настраивает CORS
+3. подключает общий роутер `/api`
+
+## Конфигурация
+
+Файл: `app/core/config.py`
+
+Обязательные переменные окружения:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+
+Необязательные:
+
+- `CORS_ORIGINS`
+- `JWT_ALGORITHM` по умолчанию `HS256`
+- `ACCESS_TOKEN_EXPIRE_MINUTES` по умолчанию `120`
+
+`.env` поддерживается через `pydantic-settings`.
+
+## Локальный запуск
+
+```bash
 pip install -r requirements.txt
+python -m alembic upgrade head
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Copy env template:
+Или через стартовый скрипт:
 
-```powershell
-copy .env.example .env
+```bash
+./start.sh
 ```
 
-Update `DATABASE_URL`, `JWT_SECRET` and `CORS_ORIGINS` in `.env`.
+Скрипт сначала применяет миграции, потом запускает `uvicorn`.
 
-For internet access:
+## Аутентификация
 
-- `DATABASE_URL` should point to your public/server PostgreSQL
-- `CORS_ORIGINS` should be:
-  - `*` for local/dev
-  - or a comma-separated list of allowed origins in production
-    Example:
-    `https://app.example.com,http://localhost:3000`
+### Регистрация
 
-## 2. Apply SQL schema
+`POST /api/auth/register`
 
-Preferred way:
+Создаёт:
 
-```powershell
-.venv\Scripts\alembic upgrade head
-```
+- запись в `app_users`
+- профиль спортсмена или тренера
 
-Legacy SQL scripts:
+Входные данные:
 
-1. `../migrations/001_init.sql`
-2. `../migrations/002_timescaledb.sql` (optional if TimescaleDB is installed)
+- email
+- password
+- role: `athlete` или `coach`
+- first_name
+- last_name
+- для спортсмена также могут передаваться:
+  `age`, `gender`, `weight_kg`, `height_cm`, `sport`
 
-## 3. Run server
+### Логин
 
-```powershell
-uvicorn app.main:app --reload --port 8000
-```
+`POST /api/auth/login`
 
-For external devices, run behind a public host or reverse proxy and use:
+Проверяет email и пароль, затем возвращает:
 
-```powershell
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
+- `access_token`
+- `token_type = bearer`
 
-Swagger UI:
+### JWT
 
-- `http://127.0.0.1:8000/docs`
+Токен содержит:
 
-## 4. First endpoints
+- `sub` - UUID пользователя
+- `exp` - срок истечения
 
-- `GET /api/health`
-- `POST /api/auth/register`
-- `POST /api/auth/login`
+Зависимости авторизации:
+
+- `get_current_user`
+- `require_athlete`
+- `require_coach`
+
+## Структура данных
+
+### Пользователи
+
+Таблицы:
+
+- `app_users`
+- `athlete_profiles`
+- `coach_profiles`
+- `coach_athlete_links`
+
+### Health и activity
+
+Таблицы:
+
+- `trainings`
+- `analysis_entries`
+- `calorie_entries`
+- `blood_pressure_entries`
+- `sleep_entries`
+- `spo2_entries`
+- `cycle_events`
+- `cycle_settings`
+
+## API маршруты
+
+### Служебный маршрут
+
+- `GET /api/health` - проверка доступности сервиса
+
+### Профиль
+
+- `GET /api/profile/me`
+- `PUT /api/profile/me`
+
+`PUT` разрешён только для спортсмена.
+
+### Тренировки
+
 - `GET /api/trainings`
 - `POST /api/trainings`
+- `PUT /api/trainings/{training_id}`
+- `DELETE /api/trainings/{training_id}`
+
+Особенности модели тренировки:
+
+- дата и время старта
+- длительность
+- дистанция
+- набор высоты
+- средний и максимальный пульс
+- калории
+- зона ЧСС
+- минуты по зонам ЧСС
+- типы активности
+- упражнения в JSONB
+- субъективная оценка самочувствия
+
+### Анализы
+
+- `GET /api/analyses`
+- `POST /api/analyses`
+
+### Калории
+
+- `GET /api/calories`
+- `POST /api/calories`
+
+### Давление
+
 - `GET /api/blood-pressure`
 - `POST /api/blood-pressure`
 
-`/api/trainings` and `/api/blood-pressure` require `Authorization: Bearer <token>`.
+### Сон
 
-## 5. Public deploy
+- `GET /api/sleep`
+- `POST /api/sleep`
 
-The backend is now prepared for public deployment.
+### SpO2
 
-Files added for deploy:
+- `GET /api/spo2`
+- `POST /api/spo2`
 
-- `Dockerfile`
-- `.dockerignore`
-- `start.sh`
-- `render.yaml`
+### Цикл
 
-### Render
+- `GET /api/cycle/settings`
+- `PUT /api/cycle/settings`
+- `GET /api/cycle/events?kind=...`
+- `PUT /api/cycle/events`
 
-Detailed Russian step-by-step guide:
+Допустимые `kind`:
 
-- `RENDER_DEPLOY_RU.md`
+- `day`
+- `excluded`
+- `start`
+- `end`
 
-1. Push `fitness_api/backend` to Git.
-2. In Render create a new Blueprint or Web Service from this folder.
-3. Set environment variables:
-   - `DATABASE_URL`
-   - `JWT_SECRET`
-   - `CORS_ORIGINS`
-4. Render will build the Docker image and run:
-   - `python -m alembic upgrade head`
-   - `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+### Тренерские маршруты
 
-Health check:
+- `GET /api/coach/athletes`
+- `GET /api/coach/athletes/{athlete_id}`
+- `POST /api/coach/athletes`
+- `DELETE /api/coach/athletes/{athlete_id}`
 
-- `/api/health`
+Backend умеет:
 
-After deploy you will get a public URL like:
+- привязывать спортсмена к тренеру по email
+- выдавать список привязанных спортсменов
+- выдавать подробную сводку по спортсмену:
+  тренировки, анализы, калории, давление, сон, SpO2
 
-- `https://fitness-api.onrender.com`
+## База данных и миграции
 
-Then run Flutter with:
+Alembic миграции находятся в `alembic/versions`.
 
-```powershell
-flutter run --dart-define=FITNESS_API_URL=https://fitness-api.onrender.com
-```
+Основные этапы развития схемы:
 
-### Railway / any Docker host
+1. `0001_init`
+   создаёт пользователей, профили, тренировки и давление
+2. `0002_calories_cycle`
+   добавляет калории и цикл
+3. `0004_sleep_spo2`
+   добавляет сон и SpO2
+4. `0005_profiles_and_coach_links`
+   расширяет профиль спортсмена и добавляет связь тренер-спортсмен
 
-You can deploy the same backend using the included `Dockerfile`.
-The container is self-starting through `start.sh` and binds to `0.0.0.0`.
+## Правила безопасности
+
+- пароли хешируются через `bcrypt`
+- длина пароля дополнительно ограничивается до 72 байт из-за особенностей `bcrypt`
+- доступ к данным идёт по JWT
+- спортсмен видит только свои данные
+- тренер видит только привязанных к нему спортсменов
+
+## Что уже поддержано, но не полностью используется клиентом
+
+Backend уже умеет больше, чем текущий Flutter-клиент использует в локальном режиме:
+
+- обновление и удаление тренировок
+- маршруты сна
+- маршруты SpO2
+- тренерские связи через backend
+- редактирование профиля спортсмена
+
+Это важно учитывать при дальнейшем развитии клиента: часть серверной базы уже готова и её можно подключать без переработки схемы.

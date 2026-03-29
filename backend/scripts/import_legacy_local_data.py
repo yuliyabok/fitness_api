@@ -1,3 +1,5 @@
+# Файл: скрипт импорта локальных данных из старого формата в backend.
+
 import argparse
 import json
 from datetime import date, datetime

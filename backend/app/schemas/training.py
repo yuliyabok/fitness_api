@@ -1,3 +1,5 @@
+# Файл: Pydantic-схемы для тренировок.
+
 import uuid
 from datetime import date, time
 from typing import Any

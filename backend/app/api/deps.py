@@ -1,3 +1,5 @@
+# Файл: общие зависимости FastAPI для доступа к БД и текущему пользователю.
+
 import uuid
 
 from fastapi import Depends, HTTPException, status

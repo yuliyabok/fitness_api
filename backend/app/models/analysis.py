@@ -1,3 +1,5 @@
+# Файл: ORM-модель для хранения анализов.
+
 import uuid
 from datetime import date, datetime
 

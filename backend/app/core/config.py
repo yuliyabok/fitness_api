@@ -1,3 +1,5 @@
+# Файл: конфигурация backend-приложения и чтение переменных окружения.
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

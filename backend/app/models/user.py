@@ -1,3 +1,5 @@
+# Файл: ORM-модель для хранения пользователей и ролей.
+
 import uuid
 from datetime import datetime
 

@@ -1,3 +1,5 @@
+# Файл: Pydantic-схемы для сатурации.
+
 import uuid
 from datetime import datetime
 

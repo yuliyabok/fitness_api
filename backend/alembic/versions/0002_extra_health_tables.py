@@ -1,3 +1,5 @@
+# Файл: миграция дополнительных таблиц health-метрик.
+
 """add analyses, calories, cycle tables and trainings.exercises
 
 Revision ID: 0002_extra_health_tables

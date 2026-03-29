@@ -1,3 +1,5 @@
+# Файл: точка входа FastAPI-приложения и регистрация маршрутов.
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

@@ -1,3 +1,5 @@
+# Файл: Pydantic-схемы для цикла.
+
 from datetime import date
 
 from pydantic import BaseModel, Field

@@ -1,3 +1,5 @@
+# Файл: настройка окружения Alembic и подключения миграций к базе данных.
+
 from logging.config import fileConfig
 
 from alembic import context

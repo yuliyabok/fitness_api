@@ -1,3 +1,5 @@
+# Файл: маршруты API для цикла.
+
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query

@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from app.schemas.analysis import AnalysisOut
 from app.schemas.blood_pressure import BloodPressureOut
@@ -26,12 +26,12 @@ class CoachLinkedAthleteOut(BaseModel):
 
 
 class CoachAthleteDetailOut(CoachLinkedAthleteOut):
-    trainings: list[TrainingOut] = []
-    analyses: list[AnalysisOut] = []
-    calories: list[CalorieOut] = []
-    blood_pressures: list[BloodPressureOut] = []
-    sleep_entries: list[SleepOut] = []
-    spo2_entries: list[Spo2Out] = []
+    trainings: list[TrainingOut] = Field(default_factory=list)
+    analyses: list[AnalysisOut] = Field(default_factory=list)
+    calories: list[CalorieOut] = Field(default_factory=list)
+    blood_pressures: list[BloodPressureOut] = Field(default_factory=list)
+    sleep_entries: list[SleepOut] = Field(default_factory=list)
+    spo2_entries: list[Spo2Out] = Field(default_factory=list)
 
 
 class CoachLinkAthleteRequest(BaseModel):

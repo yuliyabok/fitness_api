@@ -1,6 +1,6 @@
 # Файл: маршруты API для сатурации.
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -26,7 +26,11 @@ def list_spo2(
     return list(db.scalars(stmt).all())
 
 
-@router.post("", response_model=Spo2Out)
+@router.post(
+    "",
+    response_model=Spo2Out,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_spo2(
     payload: Spo2Create,
     db: Session = Depends(get_db),

@@ -24,7 +24,11 @@ def list_trainings(
     return list(db.scalars(stmt).all())
 
 
-@router.post("", response_model=TrainingOut)
+@router.post(
+    "",
+    response_model=TrainingOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_training(
     payload: TrainingCreate,
     db: Session = Depends(get_db),
@@ -100,5 +104,4 @@ def delete_training(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Training not found")
     db.delete(training)
     db.commit()
-
 

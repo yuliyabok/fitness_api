@@ -13,6 +13,7 @@ from app.models.spo2 import Spo2Entry  # noqa: F401
 from app.models.training import Training  # noqa: F401
 from app.models.user import AppUser, AthleteProfile, CoachAthleteLink, CoachProfile  # noqa: F401
 from app.core.config import settings
+from app.core.errors import register_exception_handlers
 
 
 app = FastAPI(title="Fitness App Backend", version="0.1.0")
@@ -28,6 +29,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+register_exception_handlers(app)
 app.include_router(api_router)
-
 

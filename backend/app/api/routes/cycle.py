@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -61,7 +61,10 @@ def list_cycle_events(
     user: AppUser = Depends(require_athlete),
 ) -> list[date]:
     if kind not in _ALLOWED_KINDS:
-        return []
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported cycle event kind: {kind}",
+        )
     stmt = (
         select(CycleEvent)
         .where(CycleEvent.athlete_id == user.id, CycleEvent.kind == kind)
@@ -77,7 +80,10 @@ def replace_cycle_events(
     user: AppUser = Depends(require_athlete),
 ) -> list[date]:
     if payload.kind not in _ALLOWED_KINDS:
-        return []
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported cycle event kind: {payload.kind}",
+        )
 
     db.execute(
         delete(CycleEvent).where(

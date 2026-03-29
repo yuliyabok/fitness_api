@@ -17,7 +17,11 @@ from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=TokenResponse)
+@router.post(
+    "/register",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
     try:
         ensure_bcrypt_password_limit(payload.password)

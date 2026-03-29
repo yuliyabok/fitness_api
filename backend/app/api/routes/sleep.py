@@ -1,6 +1,6 @@
 # Файл: маршруты API для сна.
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -26,7 +26,11 @@ def list_sleep(
     return list(db.scalars(stmt).all())
 
 
-@router.post("", response_model=SleepOut)
+@router.post(
+    "",
+    response_model=SleepOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_sleep(
     payload: SleepCreate,
     db: Session = Depends(get_db),

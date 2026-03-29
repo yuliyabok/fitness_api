@@ -1,6 +1,6 @@
 # Файл: маршруты API для анализов.
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -26,7 +26,11 @@ def list_analyses(
     return list(db.scalars(stmt).all())
 
 
-@router.post("", response_model=AnalysisOut)
+@router.post(
+    "",
+    response_model=AnalysisOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_analysis(
     payload: AnalysisCreate,
     db: Session = Depends(get_db),
@@ -43,4 +47,3 @@ def create_analysis(
     db.commit()
     db.refresh(entry)
     return entry
-

@@ -1,6 +1,6 @@
 # Файл: маршруты API для артериального давления.
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -26,7 +26,11 @@ def list_blood_pressure(
     return list(db.scalars(stmt).all())
 
 
-@router.post("", response_model=BloodPressureOut)
+@router.post(
+    "",
+    response_model=BloodPressureOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_blood_pressure(
     payload: BloodPressureCreate,
     db: Session = Depends(get_db),
@@ -43,4 +47,3 @@ def create_blood_pressure(
     db.commit()
     db.refresh(entry)
     return entry
-

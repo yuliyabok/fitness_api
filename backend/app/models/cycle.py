@@ -33,4 +33,9 @@ class CycleSettings(Base):
     )
     cycle_length_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
     period_length_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

@@ -1,6 +1,6 @@
 # Файл: маршруты API для калорий.
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -26,7 +26,11 @@ def list_calories(
     return list(db.scalars(stmt).all())
 
 
-@router.post("", response_model=CalorieOut)
+@router.post(
+    "",
+    response_model=CalorieOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_calorie(
     payload: CalorieCreate,
     db: Session = Depends(get_db),

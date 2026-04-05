@@ -21,6 +21,10 @@ class SleepCreate(BaseModel):
         return self
 
 
+class SleepUpdate(SleepCreate):
+    pass
+
+
 class SleepOut(BaseModel):
     id: uuid.UUID
     athlete_id: uuid.UUID

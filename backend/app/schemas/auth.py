@@ -1,5 +1,7 @@
 # Файл: Pydantic-схемы для авторизации.
 
+from typing import Literal
+
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -24,3 +26,4 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    role: Literal["athlete", "coach"]

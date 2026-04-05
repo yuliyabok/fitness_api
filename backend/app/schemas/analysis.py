@@ -13,6 +13,10 @@ class AnalysisCreate(BaseModel):
     notes: str | None = None
 
 
+class AnalysisUpdate(AnalysisCreate):
+    pass
+
+
 class AnalysisOut(BaseModel):
     id: uuid.UUID
     athlete_id: uuid.UUID
@@ -23,4 +27,3 @@ class AnalysisOut(BaseModel):
 
     class Config:
         from_attributes = True
-

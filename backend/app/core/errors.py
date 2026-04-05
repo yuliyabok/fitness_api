@@ -3,7 +3,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 
 def _format_validation_error(exc: RequestValidationError) -> str:
@@ -27,6 +27,16 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={"detail": _format_validation_error(exc)},
+        )
+
+    @app.exception_handler(IntegrityError)
+    async def handle_integrity_error(
+        _request: Request,
+        _exc: IntegrityError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"detail": "Data conflict"},
         )
 
     @app.exception_handler(SQLAlchemyError)

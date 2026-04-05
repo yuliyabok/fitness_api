@@ -3,7 +3,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Date, DateTime, ForeignKey, Index, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,6 +12,10 @@ from app.db.base import Base
 
 class AnalysisEntry(Base):
     __tablename__ = "analysis_entries"
+    __table_args__ = (
+        Index("ix_analysis_entries_athlete_id_date", "athlete_id", "date"),
+        UniqueConstraint("athlete_id", "date", "title", name="uq_analysis_entries_athlete_date_title"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     athlete_id: Mapped[uuid.UUID] = mapped_column(

@@ -3,7 +3,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,6 +14,8 @@ class CycleEvent(Base):
     __tablename__ = "cycle_events"
     __table_args__ = (
         CheckConstraint("kind IN ('day','excluded','start','end')", name="cycle_events_kind_check"),
+        Index("ix_cycle_events_athlete_id_date", "athlete_id", "date"),
+        UniqueConstraint("athlete_id", "date", "kind", name="uq_cycle_events_athlete_date_kind"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

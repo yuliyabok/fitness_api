@@ -1,11 +1,13 @@
 # Файл: Pydantic-схемы для профиля пользователя.
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
 
 
 class AthleteProfileOut(BaseModel):
+    role: Literal["athlete"] = "athlete"
     first_name: str
     last_name: str
     email: EmailStr
@@ -28,8 +30,8 @@ class AthleteProfileUpdate(BaseModel):
 
 
 class CoachProfileOut(BaseModel):
+    role: Literal["coach"] = "coach"
     first_name: str
     last_name: str
     email: EmailStr
     created_at: datetime | None = None
-

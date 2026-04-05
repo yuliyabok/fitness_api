@@ -12,6 +12,10 @@ class CalorieCreate(BaseModel):
     notes: str | None = None
 
 
+class CalorieUpdate(CalorieCreate):
+    pass
+
+
 class CalorieOut(BaseModel):
     id: uuid.UUID
     athlete_id: uuid.UUID

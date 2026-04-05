@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,6 +12,10 @@ from app.db.base import Base
 
 class Spo2Entry(Base):
     __tablename__ = "spo2_entries"
+    __table_args__ = (
+        Index("ix_spo2_entries_athlete_id_ts", "athlete_id", "ts"),
+        UniqueConstraint("athlete_id", "ts", name="uq_spo2_entries_athlete_ts"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     athlete_id: Mapped[uuid.UUID] = mapped_column(

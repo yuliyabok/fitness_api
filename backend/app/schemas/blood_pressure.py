@@ -13,6 +13,10 @@ class BloodPressureCreate(BaseModel):
     diastolic: int = Field(ge=0)
 
 
+class BloodPressureUpdate(BloodPressureCreate):
+    pass
+
+
 class BloodPressureOut(BaseModel):
     id: uuid.UUID
     athlete_id: uuid.UUID
@@ -23,4 +27,3 @@ class BloodPressureOut(BaseModel):
 
     class Config:
         from_attributes = True
-

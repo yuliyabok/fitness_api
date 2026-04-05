@@ -1,12 +1,14 @@
 # Файл: маршруты API для тренировок.
 
 import uuid
+from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_athlete
+from app.api.query_helpers import apply_date_range, apply_pagination
 from app.db.session import get_db
 from app.models.training import Training
 from app.models.user import AppUser
@@ -17,10 +19,16 @@ router = APIRouter(prefix="/trainings", tags=["trainings"])
 
 @router.get("", response_model=list[TrainingOut])
 def list_trainings(
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    limit: int | None = Query(default=None, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     user: AppUser = Depends(require_athlete),
 ) -> list[Training]:
     stmt = select(Training).where(Training.athlete_id == user.id).order_by(Training.date.desc())
+    stmt = apply_date_range(stmt, Training.date, date_from, date_to)
+    stmt = apply_pagination(stmt, limit, offset)
     return list(db.scalars(stmt).all())
 
 
@@ -104,4 +112,3 @@ def delete_training(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Training not found")
     db.delete(training)
     db.commit()
-

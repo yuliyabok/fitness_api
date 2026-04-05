@@ -3,7 +3,7 @@
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
+#приводит ссылку на БД к формату, который понимает SQLAlchemy, если она начинается с postgres:// или postgresql://
 def _normalize_database_url(value: str) -> str:
     normalized = value.strip()
     if normalized.startswith("postgres://"):
@@ -12,7 +12,7 @@ def _normalize_database_url(value: str) -> str:
         return "postgresql+psycopg://" + normalized[len("postgresql://"):]
     return normalized
 
-
+# Класс настроек приложения, который читает переменные окружения из .env и предоставляет их в виде атрибутов.
 class Settings(BaseSettings):
     database_url: str
     jwt_secret: str
@@ -25,7 +25,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
-
+# Валидатор для нормализации ссылки на БД, чтобы SQLAlchemy мог ее правильно обработать. Это позволяет использовать более короткие форматы URL для PostgreSQL.
     @field_validator("database_url", mode="before")
     @classmethod
     def normalize_database_url(cls, value: str) -> str:

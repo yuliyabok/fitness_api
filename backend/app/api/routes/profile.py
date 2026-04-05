@@ -22,6 +22,7 @@ def get_my_profile(
         if profile is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete profile not found")
         return AthleteProfileOut(
+            role="athlete",
             first_name=profile.first_name,
             last_name=profile.last_name,
             email=user.email,
@@ -37,6 +38,7 @@ def get_my_profile(
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach profile not found")
     return CoachProfileOut(
+        role="coach",
         first_name=profile.first_name,
         last_name=profile.last_name,
         email=user.email,
@@ -64,6 +66,7 @@ def update_my_athlete_profile(
     db.commit()
     db.refresh(user)
     return AthleteProfileOut(
+        role="athlete",
         first_name=profile.first_name,
         last_name=profile.last_name,
         email=user.email,
@@ -74,4 +77,3 @@ def update_my_athlete_profile(
         sport=profile.sport,
         created_at=user.created_at,
     )
-

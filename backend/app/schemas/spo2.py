@@ -12,6 +12,10 @@ class Spo2Create(BaseModel):
     source: str = "manual"
 
 
+class Spo2Update(Spo2Create):
+    pass
+
+
 class Spo2Out(BaseModel):
     id: uuid.UUID
     athlete_id: uuid.UUID

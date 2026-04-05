@@ -25,8 +25,15 @@ os.environ.setdefault("JWT_SECRET", "test-secret")
 from app.api.routes import cycle  # noqa: E402
 from app.core.errors import _format_validation_error  # noqa: E402
 from app.main import app  # noqa: E402
+from app.models.analysis import AnalysisEntry  # noqa: E402
+from app.models.blood_pressure import BloodPressureEntry  # noqa: E402
+from app.models.calorie import CalorieEntry  # noqa: E402
 from app.models.cycle import CycleSettings  # noqa: E402
+from app.models.sleep import SleepEntry  # noqa: E402
+from app.models.spo2 import Spo2Entry  # noqa: E402
 from app.models.training import Training  # noqa: E402
+from app.schemas.auth import TokenResponse  # noqa: E402
+from app.schemas.profile import AthleteProfileOut, CoachProfileOut  # noqa: E402
 from app.schemas.coach import CoachAthleteDetailOut  # noqa: E402
 
 
@@ -113,6 +120,50 @@ class BackendContractCompatibilityTests(unittest.TestCase):
     def test_models_have_runtime_updated_at_hooks(self) -> None:
         self.assertIsNotNone(Training.__table__.c.updated_at.onupdate)
         self.assertIsNotNone(CycleSettings.__table__.c.updated_at.onupdate)
+
+    def test_auth_and_profile_schemas_expose_role_explicitly(self) -> None:
+        self.assertIn("role", TokenResponse.model_fields)
+        self.assertIn("role", AthleteProfileOut.model_fields)
+        self.assertIn("role", CoachProfileOut.model_fields)
+
+    def test_history_models_expose_indexes_and_uniqueness(self) -> None:
+        expectations = {
+            AnalysisEntry.__table__: {
+                "indexes": {"ix_analysis_entries_athlete_id_date"},
+                "unique": {"uq_analysis_entries_athlete_date_title"},
+            },
+            CalorieEntry.__table__: {
+                "indexes": {"ix_calorie_entries_athlete_id_date"},
+                "unique": {"uq_calorie_entries_athlete_date"},
+            },
+            BloodPressureEntry.__table__: {
+                "indexes": {"ix_blood_pressure_entries_athlete_id_ts"},
+                "unique": {"uq_blood_pressure_entries_athlete_ts_is_morning"},
+            },
+            SleepEntry.__table__: {
+                "indexes": {"ix_sleep_entries_athlete_id_end_ts"},
+                "unique": {"uq_sleep_entries_athlete_start_end"},
+            },
+            Spo2Entry.__table__: {
+                "indexes": {"ix_spo2_entries_athlete_id_ts"},
+                "unique": {"uq_spo2_entries_athlete_ts"},
+            },
+            Training.__table__: {
+                "indexes": {"ix_trainings_athlete_id_date"},
+                "unique": set(),
+            },
+        }
+
+        for table, expected in expectations.items():
+            with self.subTest(table=table.name):
+                index_names = {index.name for index in table.indexes}
+                unique_names = {
+                    constraint.name
+                    for constraint in table.constraints
+                    if getattr(constraint, "name", None) and constraint.__class__.__name__ == "UniqueConstraint"
+                }
+                self.assertTrue(expected["indexes"].issubset(index_names))
+                self.assertTrue(expected["unique"].issubset(unique_names))
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.models.blood_pressure import BloodPressureEntry
 from app.models.user import AppUser
 from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureOut, BloodPressureUpdate
+from app.services.fitness_ai_service import enqueue_fitness_prediction
 
 router = APIRouter(prefix="/blood-pressure", tags=["blood-pressure"])
 
@@ -55,6 +56,7 @@ def get_blood_pressure(
 )
 def create_blood_pressure(
     payload: BloodPressureCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user: AppUser = Depends(require_athlete),
 ) -> BloodPressureEntry:
@@ -68,6 +70,7 @@ def create_blood_pressure(
     db.add(entry)
     db.commit()
     db.refresh(entry)
+    background_tasks.add_task(enqueue_fitness_prediction, user.id)
     return entry
 
 

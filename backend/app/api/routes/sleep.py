@@ -3,7 +3,7 @@
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.models.sleep import SleepEntry
 from app.models.user import AppUser
 from app.schemas.sleep import SleepCreate, SleepOut, SleepUpdate
+from app.services.fitness_ai_service import enqueue_fitness_prediction
 
 router = APIRouter(prefix="/sleep", tags=["sleep"])
 
@@ -55,6 +56,7 @@ def get_sleep(
 )
 def create_sleep(
     payload: SleepCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user: AppUser = Depends(require_athlete),
 ) -> SleepEntry:
@@ -70,6 +72,7 @@ def create_sleep(
     db.add(entry)
     db.commit()
     db.refresh(entry)
+    background_tasks.add_task(enqueue_fitness_prediction, user.id)
     return entry
 
 

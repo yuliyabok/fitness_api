@@ -11,6 +11,7 @@ from app.models.analysis import AnalysisEntry  # noqa: F401
 from app.models.blood_pressure import BloodPressureEntry  # noqa: F401
 from app.models.calorie import CalorieEntry  # noqa: F401
 from app.models.cycle import CycleEvent, CycleSettings  # noqa: F401
+from app.models.fitness_score import FitnessScore  # noqa: F401
 from app.models.sleep import SleepEntry  # noqa: F401
 from app.models.spo2 import Spo2Entry  # noqa: F401
 from app.models.training import Training  # noqa: F401
@@ -57,4 +58,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

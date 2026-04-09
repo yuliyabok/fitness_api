@@ -29,6 +29,7 @@ from app.models.analysis import AnalysisEntry  # noqa: E402
 from app.models.blood_pressure import BloodPressureEntry  # noqa: E402
 from app.models.calorie import CalorieEntry  # noqa: E402
 from app.models.cycle import CycleSettings  # noqa: E402
+from app.models.fitness_score import FitnessScore  # noqa: E402
 from app.models.sleep import SleepEntry  # noqa: E402
 from app.models.spo2 import Spo2Entry  # noqa: E402
 from app.models.training import Training  # noqa: E402
@@ -47,6 +48,7 @@ class BackendContractCompatibilityTests(unittest.TestCase):
     def test_create_endpoints_use_created_status(self) -> None:
         expectations = {
             ("POST", "/api/auth/register"): 201,
+            ("POST", "/api/ai/predict"): 201,
             ("POST", "/api/trainings"): 201,
             ("POST", "/api/analyses"): 201,
             ("POST", "/api/blood-pressure"): 201,
@@ -150,6 +152,13 @@ class BackendContractCompatibilityTests(unittest.TestCase):
             },
             Training.__table__: {
                 "indexes": {"ix_trainings_athlete_id_date"},
+                "unique": set(),
+            },
+            FitnessScore.__table__: {
+                "indexes": {
+                    "ix_fitness_scores_athlete_id_date",
+                    "ix_fitness_scores_athlete_id_created_at",
+                },
                 "unique": set(),
             },
         }

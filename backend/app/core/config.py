@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     cors_origins: str = "*"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 120
+    ai_service_url: str | None = None
+    ai_model_target: str = "timesfm"
 
     model_config = SettingsConfigDict(
         env_file=".env",

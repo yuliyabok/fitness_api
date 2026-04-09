@@ -18,6 +18,7 @@ Backend отвечает за авторизацию пользователей,
 - хранение сна
 - хранение SpO2
 - хранение данных цикла
+- AI-расчет индекса физической формы
 - связи тренер-спортсмен
 
 ## Технологический стек
@@ -26,7 +27,7 @@ Backend отвечает за авторизацию пользователей,
 - SQLAlchemy 2
 - PostgreSQL
 - Alembic
-- `python-jose` для JWT
+- `PyJWT` для JWT
 - `bcrypt` для хеширования паролей
 - `pydantic-settings` для конфигурации
 
@@ -55,10 +56,31 @@ Backend отвечает за авторизацию пользователей,
 - `CORS_ORIGINS`
 - `JWT_ALGORITHM`
 - `ACCESS_TOKEN_EXPIRE_MINUTES`
+- `AI_SERVICE_URL`
+- `AI_MODEL_TARGET`
 
 `.env` поддерживается.
 
 Можно взять за основу файл [.env.example](/home/yuliya/diplom/fitness_api/backend/.env.example).
+
+`AI_SERVICE_URL` должен указывать на внешний Python ML-сервис. Можно указать как базовый URL
+сервиса (`http://127.0.0.1:9000`), так и полный путь (`http://127.0.0.1:9000/predict`).
+Backend сам отправляет HTTP `POST` на `/predict` с агрегированными данными спортсмена.
+
+`AI_MODEL_TARGET` задаёт модель по умолчанию для ML-сервиса: `timesfm` или `patchtst`.
+
+ML-сервис возвращает JSON вида:
+
+```json
+{
+  "fitness_index": 82.4,
+  "recommendations": "Сохранить текущий объем сна и добавить один легкий восстановительный день."
+}
+```
+
+Локально отдельный ML-сервис можно поднять из каталога
+[ml_service](/home/yuliya/diplom/fitness_api/ml_service): он предоставляет `POST /predict`
+и умеет переключаться между `timesfm` и `patchtst` по полю `target`.
 
 ## Локальный запуск
 
@@ -184,6 +206,7 @@ python3 -m unittest tests.test_api_integration
 - регистрацию и чтение профиля
 - обновление профиля спортсмена
 - полный CRUD тренировок
+- AI prediction roundtrip и фоновое обновление fitness score
 - цикл и обработку ошибок по `kind`
 - привязку спортсмена к тренеру и чтение детальной карточки
 
@@ -242,6 +265,7 @@ Backend:
 - `blood_pressure_entries`
 - `sleep_entries`
 - `spo2_entries`
+- `fitness_scores`
 - `cycle_events`
 - `cycle_settings`
 
@@ -283,26 +307,77 @@ Backend:
 
 - `GET /api/analyses`
 - `POST /api/analyses`
+- `GET /api/analyses/{entry_id}`
+- `PUT /api/analyses/{entry_id}`
+- `DELETE /api/analyses/{entry_id}`
 
 ### Калории
 
 - `GET /api/calories`
 - `POST /api/calories`
+- `GET /api/calories/{entry_id}`
+- `PUT /api/calories/{entry_id}`
+- `DELETE /api/calories/{entry_id}`
 
 ### Артериальное давление
 
 - `GET /api/blood-pressure`
 - `POST /api/blood-pressure`
+- `GET /api/blood-pressure/{entry_id}`
+- `PUT /api/blood-pressure/{entry_id}`
+- `DELETE /api/blood-pressure/{entry_id}`
 
 ### Сон
 
 - `GET /api/sleep`
 - `POST /api/sleep`
+- `GET /api/sleep/{entry_id}`
+- `PUT /api/sleep/{entry_id}`
+- `DELETE /api/sleep/{entry_id}`
 
 ### SpO2
 
 - `GET /api/spo2`
 - `POST /api/spo2`
+- `GET /api/spo2/{entry_id}`
+- `PUT /api/spo2/{entry_id}`
+- `DELETE /api/spo2/{entry_id}`
+
+### AI индекс физической формы
+
+- `POST /api/ai/predict`
+- `GET /api/ai/last`
+
+`POST /api/ai/predict` доступен авторизованному пользователю и:
+
+- для спортсмена использует его собственный `athlete_id`
+- для тренера позволяет указать `athlete_id` только привязанного спортсмена
+
+Поддерживаемое тело запроса:
+
+```json
+{
+  "athlete_id": "optional-for-coach",
+  "date_from": "2026-04-01",
+  "date_to": "2026-04-05",
+  "history_limit": 30
+}
+```
+
+Пример ответа:
+
+```json
+{
+  "id": "9d84c1f1-70b8-4e3b-a3f8-3e5cb0f0e2c9",
+  "athlete_id": "4abef18f-95b7-4b09-a3d5-873ea0ea67d6",
+  "date": "2026-04-05",
+  "fitness_index": 84.2,
+  "recommendations": "Сохранить текущую нагрузку и добавить контроль восстановления.",
+  "created_at": "2026-04-05T12:30:00+00:00"
+}
+```
+
+`GET /api/ai/last` возвращает последнюю сохраненную запись `FitnessScore`.
 
 ### Цикл
 
@@ -331,6 +406,7 @@ Backend уже умеет:
 - возвращать список привязанных спортсменов
 - возвращать детальную карточку спортсмена
 - включать в тренерскую сводку тренировки, анализы, калории, давление, сон и SpO2
+- рассчитывать и сохранять AI-индекс физической формы через внешний ML-сервис
 
 ## Как backend используется клиентом сейчас
 
@@ -346,6 +422,8 @@ Backend уже умеет:
 - синхронизация сна
 - синхронизация SpO2
 - синхронизация цикла
+- запрос последнего AI fitness score
+- ручной пересчет AI fitness score
 - привязка спортсмена к тренеру по email
 - загрузка списка спортсменов тренера и их детальной карточки
 
@@ -369,6 +447,10 @@ Alembic-модули находятся в `alembic/versions`.
 2. калории и цикл
 3. сон и SpO2
 4. расширенные профили и связи тренер-спортсмен
+5. `0007_fitness_scores` для AI-оценок физической формы
+
+При создании новой тренировки, сна или давления backend может автоматически
+добавлять фоновый пересчет fitness score через `FastAPI BackgroundTasks`.
 
 ## Безопасность
 

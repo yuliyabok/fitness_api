@@ -6,6 +6,7 @@ import os
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -609,6 +610,57 @@ class ApiIntegrationTests(unittest.TestCase):
         payload = response.json()
         self.assertIsInstance(payload["detail"], str)
         self.assertIn("password", payload["detail"])
+
+    def test_ai_prediction_roundtrip_and_background_refresh(self) -> None:
+        token = self._register_athlete(email="ai-athlete@example.com")
+        headers = self._auth_headers(token)
+
+        with patch(
+            "app.services.fitness_ai_service.settings.ai_service_url",
+            "http://ai-service.test/predict",
+        ), patch(
+            "app.services.fitness_ai_service._call_ai_service",
+            side_effect=[
+                (81.5, "Сохранить объем сна и постепенно повышать интенсивность."),
+                (84.0, "Форма обновлена после новой тренировки."),
+            ],
+        ):
+            explicit_prediction_response = self.client.post(
+                "/api/ai/predict",
+                headers=headers,
+                json={"history_limit": 14},
+            )
+            self.assertEqual(explicit_prediction_response.status_code, 201, explicit_prediction_response.text)
+            explicit_prediction = explicit_prediction_response.json()
+            self.assertEqual(explicit_prediction["fitness_index"], 81.5)
+
+            create_training_response = self.client.post(
+                "/api/trainings",
+                headers=headers,
+                json={
+                    "title": "AI Tempo",
+                    "training_type": "Кардио",
+                    "date": "2026-03-21",
+                    "duration_minutes": 52,
+                    "distance_km": 9.3,
+                    "avg_hr": 149,
+                    "max_hr": 171,
+                },
+            )
+            self.assertEqual(create_training_response.status_code, 201, create_training_response.text)
+
+        last_response = self.client.get(
+            "/api/ai/last",
+            headers=headers,
+        )
+        self.assertEqual(last_response.status_code, 200, last_response.text)
+        latest = last_response.json()
+        self.assertEqual(latest["fitness_index"], 84.0)
+        self.assertIn("новой тренировки", latest["recommendations"])
+
+    def test_ai_routes_require_authentication(self) -> None:
+        response = self.client.get("/api/ai/last")
+        self.assertEqual(response.status_code, 401, response.text)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.models.training import Training
 from app.models.user import AppUser
 from app.schemas.training import TrainingCreate, TrainingOut
+from app.services.fitness_ai_service import enqueue_fitness_prediction
 
 router = APIRouter(prefix="/trainings", tags=["trainings"])
 
@@ -39,6 +40,7 @@ def list_trainings(
 )
 def create_training(
     payload: TrainingCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user: AppUser = Depends(require_athlete),
 ) -> Training:
@@ -65,6 +67,7 @@ def create_training(
     db.add(training)
     db.commit()
     db.refresh(training)
+    background_tasks.add_task(enqueue_fitness_prediction, user.id)
     return training
 
 

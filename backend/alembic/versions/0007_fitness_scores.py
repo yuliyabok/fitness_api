@@ -3,7 +3,7 @@
 """create fitness scores table
 
 Revision ID: 0007_fitness_scores
-Revises: 0006_indexes_and_history_constraints
+Revises: 0006_history_indexes
 Create Date: 2026-04-05 00:00:00.000000
 """
 
@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "0007_fitness_scores"
-down_revision: Union[str, None] = "0006_indexes_and_history_constraints"
+down_revision: Union[str, None] = "0006_history_indexes"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

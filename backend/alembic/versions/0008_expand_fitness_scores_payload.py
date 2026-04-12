@@ -2,7 +2,7 @@
 
 """expand fitness scores payload
 
-Revision ID: 0008_expand_fitness_scores_payload
+Revision ID: 0008_fitness_scores_v2
 Revises: 0007_fitness_scores
 Create Date: 2026-04-11 00:00:00.000000
 """
@@ -15,7 +15,7 @@ from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
-revision: str = "0008_expand_fitness_scores_payload"
+revision: str = "0008_fitness_scores_v2"
 down_revision: Union[str, None] = "0007_fitness_scores"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

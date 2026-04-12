@@ -1,7 +1,7 @@
 # Файл: маршруты API для AI-оценки физической формы.
 
 import uuid
-from datetime import date
+from datetime import date, datetime, time, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -43,7 +43,7 @@ def _resolve_request_athlete_id(
 
 
 @router.post("/predict", response_model=FitnessScoreOut, status_code=status.HTTP_201_CREATED)
-def request_prediction(
+async def request_prediction(
     payload: FitnessPredictionRequest,
     db: Session = Depends(get_db),
     user: AppUser = Depends(get_current_user),
@@ -55,7 +55,7 @@ def request_prediction(
             user=user,
             requested_athlete_id=payload.athlete_id,
         )
-        return predict_and_store_fitness_score(
+        return await predict_and_store_fitness_score(
             db,
             athlete_id=athlete_id,
             date_from=payload.date_from,
@@ -69,7 +69,7 @@ def request_prediction(
 
 
 @router.get("/last", response_model=FitnessScoreOut)
-def get_last_prediction(
+async def get_last_prediction(
     athlete_id: uuid.UUID | None = Query(default=None),
     before_date: date | None = Query(default=None),
     db: Session = Depends(get_db),
@@ -86,8 +86,12 @@ def get_last_prediction(
         .order_by(FitnessScore.created_at.desc())
     )
     if before_date is not None:
-        stmt = stmt.where(FitnessScore.date <= before_date)
+        stmt = stmt.where(FitnessScore.created_at < _before_date_boundary(before_date))
     score = db.scalar(stmt)
     if score is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fitness score not found")
     return score
+
+
+def _before_date_boundary(target_date: date) -> datetime:
+    return datetime.combine(target_date + timedelta(days=1), time.min).replace(tzinfo=timezone.utc)

@@ -7,41 +7,50 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent
 
-DEFAULT_FEATURE_NAMES = (
-    "training_duration_minutes",
-    "training_calories",
-    "training_avg_hr",
-    "training_max_hr",
-    "training_feeling_score",
-    "sleep_minutes",
-    "sleep_deep_minutes",
-    "sleep_rem_minutes",
-    "blood_pressure_systolic",
-    "blood_pressure_diastolic",
-    "spo2_percentage",
+TABULAR_FEATURE_NAMES = (
+    "recent_training_load",
+    "chronic_training_load",
+    "acute_chronic_ratio",
+    "training_consistency",
+    "avg_sleep_hours",
+    "sleep_consistency",
+    "avg_avg_hr",
+    "avg_max_hr",
+    "avg_spo2",
+    "avg_systolic",
+    "avg_diastolic",
+    "avg_feeling_score",
     "athlete_age",
     "athlete_weight_kg",
     "athlete_height_cm",
 )
 
-
-def _parse_float_list(raw: str | None) -> list[float]:
-    if raw is None:
-        return []
-    normalized = raw.strip()
-    if not normalized:
-        return []
-    return [float(part.strip()) for part in normalized.split(",") if part.strip()]
+SEQUENCE_FEATURE_NAMES = (
+    "training_load",
+    "sleep_hours",
+    "recovery_signal",
+    "cardio_signal",
+    "avg_hr",
+    "max_hr",
+    "spo2",
+    "feeling_score",
+)
 
 
 class MLServiceSettings(BaseSettings):
-    timesfm_model_path: str = "models/timesfm.onnx"
-    patchtst_model_path: str = "models/patchtst.onnx"
-    window_size: int = 30
-    default_target: str = "timesfm"
-    normalization_means: list[float] = Field(default_factory=list)
-    normalization_stds: list[float] = Field(default_factory=list)
+    window_size: int = Field(default=30, ge=7, le=365)
+    short_horizon_days: int = Field(default=7, ge=3, le=60)
+    log_level: str = "INFO"
     use_dummy_models: bool = False
+    allow_missing_models: bool = True
+    fitness_index_min: float = 0.0
+    fitness_index_max: float = 100.0
+    timesfm_model_path: str = "models/timesfm.pt"
+    patchtst_model_path: str = "models/patchtst.pt"
+    load_model_path: str = "models/load_model.pkl"
+    recovery_model_path: str = "models/recovery_model.pkl"
+    cardio_model_path: str = "models/cardio_model.pkl"
+    scaler_path: str = "models/scaler.pkl"
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -49,31 +58,31 @@ class MLServiceSettings(BaseSettings):
         extra="ignore",
     )
 
-    @field_validator("timesfm_model_path", "patchtst_model_path", mode="before")
+    @field_validator(
+        "timesfm_model_path",
+        "patchtst_model_path",
+        "load_model_path",
+        "recovery_model_path",
+        "cardio_model_path",
+        "scaler_path",
+        mode="before",
+    )
     @classmethod
     def _normalize_model_path(cls, value: str) -> str:
         return str(value).strip()
 
-    @field_validator("normalization_means", "normalization_stds", mode="before")
+    @field_validator("log_level", mode="before")
     @classmethod
-    def _normalize_float_list(cls, value: object) -> list[float]:
-        if isinstance(value, list):
-            return [float(item) for item in value]
-        if isinstance(value, str) or value is None:
-            return _parse_float_list(value)
-        raise TypeError("Expected comma-separated string or list of floats")
-
-    @field_validator("default_target")
-    @classmethod
-    def _validate_target(cls, value: str) -> str:
-        normalized = value.strip().lower()
-        if normalized not in {"timesfm", "patchtst"}:
-            raise ValueError("default_target must be either 'timesfm' or 'patchtst'")
-        return normalized
+    def _normalize_log_level(cls, value: str) -> str:
+        return str(value).strip().upper()
 
     @property
-    def feature_count(self) -> int:
-        return len(DEFAULT_FEATURE_NAMES)
+    def tabular_feature_count(self) -> int:
+        return len(TABULAR_FEATURE_NAMES)
+
+    @property
+    def sequence_feature_count(self) -> int:
+        return len(SEQUENCE_FEATURE_NAMES)
 
     @property
     def resolved_timesfm_model_path(self) -> Path:
@@ -83,12 +92,21 @@ class MLServiceSettings(BaseSettings):
     def resolved_patchtst_model_path(self) -> Path:
         return _resolve_path(self.patchtst_model_path)
 
-    def normalized_means(self) -> list[float]:
-        return _fit_vector(self.normalization_means, self.feature_count, fill=0.0)
+    @property
+    def resolved_load_model_path(self) -> Path:
+        return _resolve_path(self.load_model_path)
 
-    def normalized_stds(self) -> list[float]:
-        values = _fit_vector(self.normalization_stds, self.feature_count, fill=1.0)
-        return [value if abs(value) > 1e-9 else 1.0 for value in values]
+    @property
+    def resolved_recovery_model_path(self) -> Path:
+        return _resolve_path(self.recovery_model_path)
+
+    @property
+    def resolved_cardio_model_path(self) -> Path:
+        return _resolve_path(self.cardio_model_path)
+
+    @property
+    def resolved_scaler_path(self) -> Path:
+        return _resolve_path(self.scaler_path)
 
 
 def _resolve_path(raw_path: str) -> Path:
@@ -96,9 +114,3 @@ def _resolve_path(raw_path: str) -> Path:
     if candidate.is_absolute():
         return candidate
     return (BASE_DIR / candidate).resolve()
-
-
-def _fit_vector(values: list[float], size: int, *, fill: float) -> list[float]:
-    if len(values) >= size:
-        return values[:size]
-    return [*values, *([fill] * (size - len(values)))]

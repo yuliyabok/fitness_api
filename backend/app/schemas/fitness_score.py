@@ -2,8 +2,11 @@
 
 import uuid
 from datetime import date, datetime
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+TrendValue = Literal["up", "stable", "down"]
 
 
 class FitnessPredictionRequest(BaseModel):
@@ -14,12 +17,12 @@ class FitnessPredictionRequest(BaseModel):
 
 
 class FitnessScoreOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     athlete_id: uuid.UUID
-    date: date
     fitness_index: float
-    recommendations: str
+    fatigue_risk: float
+    trend: TrendValue
+    recommendations: list[str]
     created_at: datetime
-
-    class Config:
-        from_attributes = True

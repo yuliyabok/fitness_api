@@ -17,7 +17,7 @@ from app.models.sleep import SleepEntry
 from app.models.spo2 import Spo2Entry
 from app.models.training import Training
 from app.models.user import AthleteProfile, CoachAthleteLink
-from app.services.ai_client import AIClient, AIClientResponseError, AIClientUnavailableError
+from app.services.ai_client import AIClient, AIClientPrediction, AIClientResponseError, AIClientUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -206,16 +206,12 @@ def build_prediction_payload(
     }
 
 
-def _call_ai_service(payload: dict[str, object]) -> tuple[float, str]:
-    client = AIClient(
-        service_url=require_ai_service_url(),
-        target=settings.ai_model_target,
-    )
-    prediction = client.predict(payload)
-    return prediction.fitness_index, prediction.recommendations
+async def _call_ai_service(payload: dict[str, object]) -> AIClientPrediction:
+    client = AIClient(service_url=require_ai_service_url())
+    return await client.predict(payload)
 
 
-def predict_and_store_fitness_score(
+async def predict_and_store_fitness_score(
     db: Session,
     *,
     athlete_id: uuid.UUID,
@@ -230,12 +226,13 @@ def predict_and_store_fitness_score(
         date_to=date_to,
         history_limit=history_limit,
     )
-    fitness_index, recommendations = _call_ai_service(payload)
+    prediction = await _call_ai_service(payload)
     score = FitnessScore(
         athlete_id=athlete_id,
-        date=date_to or date.today(),
-        fitness_index=fitness_index,
-        recommendations=recommendations,
+        fitness_index=prediction.fitness_index,
+        fatigue_risk=prediction.fatigue_risk,
+        trend=prediction.trend,
+        recommendations=prediction.recommendations,
     )
     db.add(score)
     db.commit()
@@ -243,7 +240,7 @@ def predict_and_store_fitness_score(
     return score
 
 
-def enqueue_fitness_prediction(
+async def enqueue_fitness_prediction(
     athlete_id: uuid.UUID,
     *,
     date_from: date | None = None,
@@ -255,7 +252,7 @@ def enqueue_fitness_prediction(
 
     with SessionLocal() as db:
         try:
-            predict_and_store_fitness_score(
+            await predict_and_store_fitness_score(
                 db,
                 athlete_id=athlete_id,
                 date_from=date_from,

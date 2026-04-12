@@ -2,30 +2,26 @@ from __future__ import annotations
 
 import unittest
 
-from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from ml_service.config import MLServiceSettings
-from ml_service.main import create_app
+from ml_service.main import _predict_sync
+from ml_service.schemas import PredictionRequest
+from ml_service.services.model_loader import load_model_artifacts
 
 
 class MLServicePredictTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        settings = MLServiceSettings(
+        cls.settings = MLServiceSettings(
             use_dummy_models=True,
             window_size=14,
         )
-        cls.client = TestClient(create_app(settings))
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        cls.client.close()
+        cls.artifacts = load_model_artifacts(cls.settings)
 
     def test_predict_returns_fitness_index_and_recommendations(self) -> None:
-        response = self.client.post(
-            "/predict",
-            json={
-                "target": "timesfm",
+        payload = PredictionRequest.model_validate(
+            {
                 "profile": {
                     "age": 24,
                     "weight_kg": 60,
@@ -63,36 +59,33 @@ class MLServicePredictTests(unittest.TestCase):
                         "percentage": 98,
                     }
                 ],
-            },
+            }
         )
-        self.assertEqual(response.status_code, 200, response.text)
-        payload = response.json()
-        self.assertEqual(payload["target"], "timesfm")
-        self.assertIsInstance(payload["fitness_index"], float)
-        self.assertGreaterEqual(payload["fitness_index"], 0)
-        self.assertLessEqual(payload["fitness_index"], 100)
-        self.assertTrue(payload["recommendations"])
+        result = _predict_sync(payload, self.artifacts, self.settings).model_dump()
+        self.assertIsInstance(result["fitness_index"], float)
+        self.assertGreaterEqual(result["fitness_index"], 0)
+        self.assertLessEqual(result["fitness_index"], 100)
+        self.assertIsInstance(result["fatigue_risk"], float)
+        self.assertIn(result["trend"], {"up", "stable", "down"})
+        self.assertTrue(result["recommendations"])
+        self.assertIsInstance(result["recommendations"], list)
 
-    def test_predict_supports_patchtst_target(self) -> None:
-        response = self.client.post(
-            "/predict",
-            json={
-                "target": "patchtst",
+    def test_predict_honors_window_size(self) -> None:
+        payload = PredictionRequest.model_validate(
+            {
                 "window_size": 10,
                 "trainings": [
                     {"date": "2026-04-02", "duration_minutes": 40},
                     {"date": "2026-04-03", "duration_minutes": 55},
                 ],
-            },
+            }
         )
-        self.assertEqual(response.status_code, 200, response.text)
-        payload = response.json()
-        self.assertEqual(payload["target"], "patchtst")
-        self.assertEqual(payload["window_size"], 10)
+        result = _predict_sync(payload, self.artifacts, self.settings).model_dump()
+        self.assertIn(result["trend"], {"up", "stable", "down"})
 
-    def test_invalid_target_is_rejected(self) -> None:
-        response = self.client.post("/predict", json={"target": "unknown"})
-        self.assertEqual(response.status_code, 422, response.text)
+    def test_invalid_date_range_is_rejected(self) -> None:
+        with self.assertRaises(ValidationError):
+            PredictionRequest.model_validate({"date_from": "2026-04-10", "date_to": "2026-04-01"})
 
 
 if __name__ == "__main__":

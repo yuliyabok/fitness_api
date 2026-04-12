@@ -155,10 +155,7 @@ class BackendContractCompatibilityTests(unittest.TestCase):
                 "unique": set(),
             },
             FitnessScore.__table__: {
-                "indexes": {
-                    "ix_fitness_scores_athlete_id_date",
-                    "ix_fitness_scores_athlete_id_created_at",
-                },
+                "indexes": {"ix_fitness_scores_athlete_id_created_at"},
                 "unique": set(),
             },
         }
@@ -173,6 +170,13 @@ class BackendContractCompatibilityTests(unittest.TestCase):
                 }
                 self.assertTrue(expected["indexes"].issubset(index_names))
                 self.assertTrue(expected["unique"].issubset(unique_names))
+
+    def test_fitness_score_model_uses_extended_ai_payload(self) -> None:
+        columns = FitnessScore.__table__.c
+        self.assertIn("fatigue_risk", columns)
+        self.assertIn("trend", columns)
+        self.assertIn("recommendations", columns)
+        self.assertNotIn("date", columns)
 
 
 if __name__ == "__main__":

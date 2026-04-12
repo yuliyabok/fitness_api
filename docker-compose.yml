@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fitness-postgres
+    environment:
+      POSTGRES_DB: fitness
+      POSTGRES_USER: fitness
+      POSTGRES_PASSWORD: fitness
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fitness -d fitness"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  ml_service:
+    build:
+      context: .
+      dockerfile: ml_service/Dockerfile
+    container_name: fitness-ml-service
+    environment:
+      USE_DUMMY_MODELS: "false"
+      ALLOW_MISSING_MODELS: "false"
+      LOG_LEVEL: INFO
+      TIMESFM_MODEL_PATH: models/timesfm.pt
+      PATCHTST_MODEL_PATH: models/patchtst.pt
+      LOAD_MODEL_PATH: models/load_model.pkl
+      RECOVERY_MODEL_PATH: models/recovery_model.pkl
+      CARDIO_MODEL_PATH: models/cardio_model.pkl
+      SCALER_PATH: models/scaler.pkl
+    ports:
+      - "9000:9000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/health', timeout=5)"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fitness-api-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml_service:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://fitness:fitness@postgres:5432/fitness
+      JWT_SECRET: dev-secret
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 120
+      CORS_ORIGINS: "*"
+      AI_SERVICE_URL: http://ml_service:9000
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+volumes:
+  postgres_data:

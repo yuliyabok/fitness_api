@@ -6,7 +6,7 @@ import os
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -24,6 +24,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.db.session import engine  # noqa: E402
 from app.main import app  # noqa: E402
+from app.services.ai_client import AIClientPrediction  # noqa: E402
 
 
 class ApiIntegrationTests(unittest.TestCase):
@@ -620,10 +621,22 @@ class ApiIntegrationTests(unittest.TestCase):
             "http://ai-service.test/predict",
         ), patch(
             "app.services.fitness_ai_service._call_ai_service",
-            side_effect=[
-                (81.5, "Сохранить объем сна и постепенно повышать интенсивность."),
-                (84.0, "Форма обновлена после новой тренировки."),
-            ],
+            new=AsyncMock(
+                side_effect=[
+                    AIClientPrediction(
+                        fitness_index=81.5,
+                        fatigue_risk=28.0,
+                        trend="up",
+                        recommendations=["Сохранить объем сна и постепенно повышать интенсивность."],
+                    ),
+                    AIClientPrediction(
+                        fitness_index=84.0,
+                        fatigue_risk=24.0,
+                        trend="up",
+                        recommendations=["Форма обновлена после новой тренировки."],
+                    ),
+                ]
+            ),
         ):
             explicit_prediction_response = self.client.post(
                 "/api/ai/predict",
@@ -633,6 +646,9 @@ class ApiIntegrationTests(unittest.TestCase):
             self.assertEqual(explicit_prediction_response.status_code, 201, explicit_prediction_response.text)
             explicit_prediction = explicit_prediction_response.json()
             self.assertEqual(explicit_prediction["fitness_index"], 81.5)
+            self.assertEqual(explicit_prediction["fatigue_risk"], 28.0)
+            self.assertEqual(explicit_prediction["trend"], "up")
+            self.assertIsInstance(explicit_prediction["recommendations"], list)
 
             create_training_response = self.client.post(
                 "/api/trainings",
@@ -656,7 +672,9 @@ class ApiIntegrationTests(unittest.TestCase):
         self.assertEqual(last_response.status_code, 200, last_response.text)
         latest = last_response.json()
         self.assertEqual(latest["fitness_index"], 84.0)
-        self.assertIn("новой тренировки", latest["recommendations"])
+        self.assertEqual(latest["fatigue_risk"], 24.0)
+        self.assertEqual(latest["trend"], "up")
+        self.assertTrue(any("новой тренировки" in item for item in latest["recommendations"]))
 
     def test_ai_routes_require_authentication(self) -> None:
         response = self.client.get("/api/ai/last")

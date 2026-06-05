@@ -102,6 +102,27 @@ curl -fsSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
 ./scripts/run_backend.sh
 ```
 
+По умолчанию скрипт запускает backend на `0.0.0.0:8000`, поэтому сервер доступен не
+только с этого компьютера, но и с телефона или другого устройства в той же Wi-Fi
+сети. При старте скрипт выводит адрес вида:
+
+```text
+Wi-Fi/LAN URL: http://192.168.1.74:8000
+Health-check:  http://192.168.1.74:8000/api/health
+```
+
+Этот `Wi-Fi/LAN URL` нужно указать в мобильном/Flutter-приложении вместо
+`localhost` или `127.0.0.1`.
+
+Если нужно задать порт вручную:
+
+```bash
+PORT=8080 ./scripts/run_backend.sh
+```
+
+Если устройство в той же Wi-Fi сети не открывает backend, проверьте, что firewall
+разрешает входящие подключения на выбранный порт.
+
 Для проверки интеграции с базой и API:
 
 ```bash
@@ -119,7 +140,8 @@ docker compose up --build
 После этого:
 
 - PostgreSQL будет доступен на `localhost:5432`
-- backend будет доступен на `http://localhost:8000`
+- backend будет доступен на этом компьютере по `http://localhost:8000`
+- с другого устройства в той же Wi-Fi сети backend будет доступен по `http://<IP-компьютера>:8000`
 - health-check: `GET http://localhost:8000/api/health`
 
 ## Публичный деплой для постоянной работы
